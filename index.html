@@ -1,0 +1,1605 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Inventario Gas — Javier Morales</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #eef1f6;
+      --surface: #ffffff;
+      --surface-alt: #f8fafc;
+      --primary: #0f2744;
+      --primary-light: #1a3a5c;
+      --accent: #2563eb;
+      --accent-dim: rgba(37, 99, 235, 0.12);
+      --text: #1e293b;
+      --text-muted: #64748b;
+      --green: #059669;
+      --green-bg: #ecfdf5;
+      --yellow: #d97706;
+      --yellow-bg: #fffbeb;
+      --red: #dc2626;
+      --red-bg: #fef2f2;
+      --border: #e2e8f0;
+      --shadow-sm: 0 1px 2px rgba(15, 39, 68, 0.06);
+      --shadow-md: 0 4px 12px rgba(15, 39, 68, 0.08);
+      --shadow-lg: 0 8px 24px rgba(15, 39, 68, 0.1);
+      --font: 'IBM Plex Sans', system-ui, sans-serif;
+      --mono: 'IBM Plex Mono', monospace;
+      --header-h: 72px;
+      --radius: 8px;
+      --radius-lg: 12px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Header empresarial */
+    .header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: calc(var(--header-h) + env(safe-area-inset-top, 0));
+      padding-top: env(safe-area-inset-top, 0);
+      background: var(--primary);
+      box-shadow: var(--shadow-md);
+      z-index: 1000;
+    }
+
+    .header-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 1.5rem;
+      gap: 1rem;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.875rem;
+    }
+
+    .brand-mark {
+      width: 44px;
+      height: 44px;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: var(--radius);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .brand-mark svg { width: 26px; height: 26px; }
+
+    .brand-text h1 {
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.01em;
+      line-height: 1.2;
+    }
+
+    .brand-text p {
+      font-size: 0.75rem;
+      color: rgba(255,255,255,0.65);
+      font-weight: 500;
+      margin-top: 2px;
+    }
+
+    .header-badge {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: rgba(255,255,255,0.9);
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.15);
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+
+    .app-shell {
+      padding-top: calc(var(--header-h) + env(safe-area-inset-top, 0));
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Toast */
+    #toast-container {
+      position: fixed;
+      top: calc(var(--header-h) + env(safe-area-inset-top, 0) + 12px);
+      right: 1.5rem;
+      z-index: 2000;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      width: min(380px, calc(100% - 2rem));
+      pointer-events: none;
+    }
+
+    .toast {
+      padding: 0.875rem 1rem;
+      border-radius: var(--radius);
+      font-size: 0.875rem;
+      font-weight: 500;
+      box-shadow: var(--shadow-lg);
+      animation: toastIn 0.3s ease forwards;
+      pointer-events: auto;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    .toast::before {
+      content: '';
+      display: inline-block;
+      width: 4px;
+      height: 100%;
+      position: absolute;
+      left: 0;
+      top: 0;
+      border-radius: var(--radius) 0 0 var(--radius);
+    }
+
+    .toast { position: relative; padding-left: 1.25rem; }
+    .toast.success { border-left: 4px solid var(--green); }
+    .toast.error { border-left: 4px solid var(--red); }
+    .toast.info { border-left: 4px solid var(--accent); }
+
+    .toast.out { animation: toastOut 0.25s ease forwards; }
+
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateX(12px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    @keyframes toastOut {
+      to { opacity: 0; transform: translateX(12px); }
+    }
+
+    /* Navegación */
+    .tabs-nav {
+      display: flex;
+      gap: 0;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scroll-snap-type: x mandatory;
+      scrollbar-width: none;
+      position: sticky;
+      top: calc(var(--header-h) + env(safe-area-inset-top, 0));
+      z-index: 900;
+      padding: 0 max(1rem, calc((100% - 1280px) / 2 + 1rem));
+      padding-left: max(1rem, env(safe-area-inset-left));
+      padding-right: max(1rem, env(safe-area-inset-right));
+    }
+
+    .tabs-nav::-webkit-scrollbar { display: none; }
+
+    .tab-btn {
+      flex: 1 0 auto;
+      min-width: min(100%, 7.5rem);
+      padding: 0.875rem 1rem;
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--text-muted);
+      font-family: var(--font);
+      font-size: 0.875rem;
+      font-weight: 600;
+      transition: color 0.2s, border-color 0.2s;
+      white-space: nowrap;
+      margin-bottom: -1px;
+      scroll-snap-align: start;
+      min-height: 48px;
+    }
+
+    .tab-label-short { display: none; }
+
+    .tab-btn:hover { color: var(--primary); }
+
+    .tab-btn.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    /* Contenido */
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 1.5rem;
+      flex: 1;
+      width: 100%;
+    }
+
+    .tab-panel {
+      display: none;
+      animation: fadeIn 0.25s ease;
+    }
+
+    .tab-panel.active { display: block; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* KPIs */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1rem 1.25rem;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .stat-card .stat-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin-bottom: 0.35rem;
+    }
+
+    .stat-card .stat-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--primary);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stat-card.stat-warn .stat-value { color: var(--yellow); }
+    .stat-card.stat-danger .stat-value { color: var(--red); }
+    .stat-card.stat-ok .stat-value { color: var(--green); }
+
+    /* Cards */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 1.5rem;
+      overflow: hidden;
+    }
+
+    .card-head {
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface-alt);
+    }
+
+    .card-title {
+      font-size: 0.9375rem;
+      font-weight: 700;
+      color: var(--primary);
+      letter-spacing: -0.01em;
+    }
+
+    .card-sub {
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      margin-top: 0.2rem;
+    }
+
+    .card-body { padding: 1.5rem; }
+
+    /* Toolbar */
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: center;
+    }
+
+    .search-wrap {
+      flex: 1;
+      min-width: 220px;
+      position: relative;
+    }
+
+    .search-wrap input {
+      padding-left: 2.5rem;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%2364748b' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85zm-5.242 1.156a5 5 0 1 1 0-10 5 5 0 0 1 0 10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: 0.85rem center;
+    }
+
+    /* Forms */
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 0.4rem;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 0.625rem 0.875rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 0.9375rem;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    input:hover, select:hover, textarea:hover {
+      border-color: #cbd5e1;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-dim);
+    }
+
+    textarea { min-height: 80px; resize: vertical; }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      padding: 0.5625rem 1.125rem;
+      border: 1px solid transparent;
+      border-radius: var(--radius);
+      font-family: var(--font);
+      font-size: 0.875rem;
+      font-weight: 600;
+      transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .btn:active { transform: translateY(1px); }
+
+    .btn-green {
+      background: var(--green);
+      color: #fff;
+      border-color: #047857;
+    }
+    .btn-green:hover { background: #047857; }
+
+    .btn-red {
+      background: var(--surface);
+      color: var(--red);
+      border-color: #fecaca;
+    }
+    .btn-red:hover { background: var(--red-bg); border-color: #fca5a5; }
+
+    .btn-blue {
+      background: var(--accent);
+      color: #fff;
+      border-color: #1d4ed8;
+    }
+    .btn-blue:hover { background: #1d4ed8; }
+
+    .btn-outline {
+      background: var(--surface);
+      border-color: var(--border);
+      color: var(--primary);
+    }
+    .btn-outline:hover {
+      background: var(--surface-alt);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .btn-sm { padding: 0.375rem 0.75rem; font-size: 0.8125rem; }
+
+    .btn-block-sm { width: 100%; }
+
+    .order-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-shrink: 0;
+    }
+
+    /* Tables */
+    .table-wrap {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      position: relative;
+    }
+
+    .table-scroll-hint {
+      display: none;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .table-scroll-hint::before {
+      content: '↔';
+      font-size: 1rem;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+    }
+
+    th, td {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    th {
+      background: var(--surface-alt);
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+
+    tbody tr:last-child td { border-bottom: none; }
+
+    tbody tr:hover td { background: #f1f5f9; }
+
+    tbody tr:nth-child(even) td { background: #fafbfc; }
+    tbody tr:nth-child(even):hover td { background: #f1f5f9; }
+
+    .code-cell {
+      font-family: var(--mono);
+      font-weight: 600;
+      font-size: 0.8125rem;
+      color: var(--primary);
+    }
+
+    /* Stock pills */
+    .stock-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 600;
+      font-family: var(--mono);
+      font-size: 0.8125rem;
+      padding: 0.25rem 0.625rem;
+      border-radius: 999px;
+    }
+
+    .stock-pill--green { background: var(--green-bg); color: var(--green); }
+    .stock-pill--yellow { background: var(--yellow-bg); color: var(--yellow); }
+    .stock-pill--red { background: var(--red-bg); color: var(--red); }
+
+    .stock-pill-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    /* Orders */
+    .material-rows { margin: 1rem 0; }
+
+    .material-row {
+      display: grid;
+      grid-template-columns: 1fr 140px auto;
+      gap: 1rem;
+      align-items: end;
+      margin-bottom: 0.75rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px dashed var(--border);
+    }
+
+    .material-row:last-child { border-bottom: none; }
+
+    .order-card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 0.75rem;
+      overflow: hidden;
+      background: var(--surface);
+    }
+
+    .order-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding: 1rem 1.25rem;
+      background: var(--surface-alt);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .order-header:hover { background: #f1f5f9; }
+
+    .order-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.25rem;
+      font-size: 0.875rem;
+      color: var(--text);
+    }
+
+    .order-meta strong {
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      margin-right: 0.35rem;
+    }
+
+    .order-detail {
+      display: none;
+      padding: 1rem 1.25rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .order-card.expanded .order-detail { display: block; }
+
+    .chevron {
+      transition: transform 0.2s;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+    }
+
+    .order-card.expanded .chevron { transform: rotate(180deg); }
+
+    .empty-msg {
+      text-align: center;
+      padding: 2.5rem;
+      color: var(--text-muted);
+      font-size: 0.9375rem;
+    }
+
+    .form-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-top: 1.25rem;
+      padding-top: 1.25rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .ing-otro-wrap {
+      display: none;
+      grid-column: 1 / -1;
+    }
+
+    .ing-otro-wrap.visible { display: block; }
+
+    .app-footer {
+      text-align: center;
+      padding: 1rem;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      margin-top: auto;
+    }
+
+    /* Tablet */
+    @media (max-width: 1024px) {
+      .form-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .form-group[style*="grid-column"] {
+        grid-column: 1 / -1 !important;
+      }
+    }
+
+    @media (max-width: 768px) {
+      :root {
+        --header-h: 60px;
+      }
+
+      .header-inner {
+        padding: 0 1rem;
+        padding-left: max(1rem, env(safe-area-inset-left));
+        padding-right: max(1rem, env(safe-area-inset-right));
+      }
+
+      .brand-mark { width: 38px; height: 38px; }
+      .brand-mark svg { width: 22px; height: 22px; }
+      .brand-text h1 { font-size: 0.9375rem; }
+      .brand-text p { font-size: 0.6875rem; }
+      .header-badge { display: none; }
+
+      .container {
+        padding: 1rem;
+        padding-bottom: max(1rem, env(safe-area-inset-bottom));
+      }
+
+      .card-head { padding: 0.875rem 1rem; }
+      .card-body { padding: 1rem; }
+      .card { margin-bottom: 1rem; }
+
+      .stats-row {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+      }
+
+      .stat-card { padding: 0.875rem 1rem; }
+      .stat-card .stat-value { font-size: 1.25rem; }
+
+      .tab-label-full { display: none; }
+      .tab-label-short { display: inline; }
+
+      .tab-btn {
+        flex: 1 1 0;
+        min-width: 0;
+        padding: 0.75rem 0.5rem;
+        font-size: 0.8125rem;
+        text-align: center;
+      }
+
+      .form-grid { grid-template-columns: 1fr; }
+      .material-row {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+      }
+      .material-row .btn-quitar-fila { width: 100%; }
+
+      .toolbar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .toolbar .btn,
+      .form-actions .btn {
+        width: 100%;
+        min-height: 44px;
+      }
+
+      .form-actions {
+        flex-direction: column;
+      }
+
+      input, select, textarea, .btn {
+        min-height: 44px;
+        font-size: 1rem;
+      }
+
+      textarea { min-height: 88px; }
+
+      #toast-container {
+        top: calc(var(--header-h) + 8px);
+        right: max(0.75rem, env(safe-area-inset-right));
+        left: max(0.75rem, env(safe-area-inset-left));
+        width: auto;
+      }
+
+      .order-header {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .order-meta {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .order-meta span {
+        display: block;
+        line-height: 1.4;
+      }
+
+      .order-header-actions {
+        width: 100%;
+        justify-content: space-between;
+      }
+
+      .order-header-actions .btn { flex: 1; }
+
+      .table-scroll-hint { display: flex; }
+    }
+
+    /* Móvil: tablas como tarjetas */
+    @media (max-width: 640px) {
+      .table-scroll-hint { display: none; }
+      .table-wrap.table-cards {
+        overflow: visible;
+        border: none;
+        background: transparent;
+      }
+
+      .table-wrap.table-cards table {
+        display: block;
+      }
+
+      .table-wrap.table-cards thead {
+        display: none;
+      }
+
+      .table-wrap.table-cards tbody {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .table-wrap.table-cards tbody tr {
+        display: block;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-sm);
+        padding: 0.25rem 0;
+      }
+
+      .table-wrap.table-cards tbody tr:hover td,
+      .table-wrap.table-cards tbody tr:nth-child(even) td {
+        background: transparent;
+      }
+
+      .table-wrap.table-cards tbody td {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 0.625rem 1rem;
+        border-bottom: 1px solid var(--border);
+        text-align: right;
+        font-size: 0.875rem;
+      }
+
+      .table-wrap.table-cards tbody td:last-child {
+        border-bottom: none;
+      }
+
+      .table-wrap.table-cards tbody td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        font-size: 0.6875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--text-muted);
+        text-align: left;
+        flex: 0 0 38%;
+        padding-top: 0.1rem;
+      }
+
+      .table-wrap.table-cards tbody td.td-actions {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.5rem;
+      }
+
+      .table-wrap.table-cards tbody td.td-actions::before {
+        content: attr(data-label);
+      }
+
+      .table-wrap.table-cards tbody td.td-actions .btn {
+        width: 100%;
+      }
+
+      .table-wrap.table-cards tbody tr.empty-row td {
+        display: block;
+        text-align: center;
+        padding: 1.5rem;
+      }
+
+      .table-wrap.table-cards tbody tr.empty-row td::before {
+        display: none;
+      }
+
+      /* Tablas anchas: scroll horizontal con indicador */
+      .table-wrap.table-scroll-only {
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        margin: 0 -0.25rem;
+        padding: 0 0.25rem;
+      }
+
+      .table-wrap.table-scroll-only table {
+        min-width: 520px;
+      }
+
+      th, td {
+        padding: 0.625rem 0.75rem;
+      }
+    }
+
+    @media (max-width: 380px) {
+      .stats-row {
+        grid-template-columns: 1fr 1fr;
+      }
+      .stat-card .stat-label { font-size: 0.625rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="header">
+    <div class="header-inner">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="3" y="8" width="18" height="12" rx="2" stroke="#fff" stroke-width="1.5"/>
+            <path d="M8 8V6a4 4 0 0 1 8 0v2" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/>
+            <circle cx="12" cy="14" r="2" fill="#60a5fa"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1>Inventario Gas</h1>
+          <p>Javier Morales · Gestión de materiales</p>
+        </div>
+      </div>
+      <span class="header-badge">Sistema local</span>
+    </div>
+  </header>
+
+  <div id="toast-container" aria-live="polite"></div>
+
+  <div class="app-shell">
+    <nav class="tabs-nav" role="tablist" aria-label="Secciones principales">
+      <button class="tab-btn active" data-tab="saldos" role="tab" aria-selected="true">
+        <span class="tab-label-full">Saldos</span><span class="tab-label-short">Saldos</span>
+      </button>
+      <button class="tab-btn" data-tab="ingreso" role="tab">
+        <span class="tab-label-full">Ingreso de material</span><span class="tab-label-short">Ingreso</span>
+      </button>
+      <button class="tab-btn" data-tab="ordenes" role="tab">
+        <span class="tab-label-full">Órdenes de servicio</span><span class="tab-label-short">Órdenes</span>
+      </button>
+    </nav>
+
+    <main class="container">
+    <!-- PESTAÑA 1: SALDOS -->
+    <section id="tab-saldos" class="tab-panel active" role="tabpanel">
+      <div class="stats-row" id="stats-row">
+        <div class="stat-card"><div class="stat-label">Materiales</div><div class="stat-value" id="stat-total">0</div></div>
+        <div class="stat-card stat-ok"><div class="stat-label">Stock normal</div><div class="stat-value" id="stat-ok">0</div></div>
+        <div class="stat-card stat-warn"><div class="stat-label">Stock bajo</div><div class="stat-value" id="stat-warn">0</div></div>
+        <div class="stat-card stat-danger"><div class="stat-label">Stock crítico</div><div class="stat-value" id="stat-danger">0</div></div>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">Inventario actual</div>
+          <div class="card-sub">Stock calculado en tiempo real según ingresos y consumos</div>
+        </div>
+        <div class="card-body">
+        <div class="toolbar" style="margin-bottom:1.25rem;">
+          <div class="search-wrap">
+            <input type="search" id="search-saldos" placeholder="Buscar por código o material…" autocomplete="off">
+          </div>
+          <button type="button" class="btn btn-blue" id="btn-export">Exportar respaldo</button>
+        </div>
+        <p class="table-scroll-hint" aria-hidden="true">Desliza la tabla para ver más columnas</p>
+        <div class="table-wrap table-cards">
+          <table id="table-saldos">
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Material</th>
+                <th>Unidad</th>
+                <th>Stock Actual</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PESTAÑA 2: INGRESO -->
+    <section id="tab-ingreso" class="tab-panel" role="tabpanel">
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">Registrar ingreso</div>
+          <div class="card-sub">Seleccione el material del catálogo o use la opción Otro</div>
+        </div>
+        <div class="card-body">
+        <form id="form-ingreso">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="ing-fecha">Fecha</label>
+              <input type="date" id="ing-fecha" required>
+            </div>
+            <div class="form-group" style="grid-column: 1 / -1;">
+              <label for="ing-material">Material</label>
+              <select id="ing-material" required>
+                <option value="">— Seleccionar material —</option>
+              </select>
+            </div>
+            <div class="form-group ing-otro-wrap" id="ing-otro-wrap">
+              <label for="ing-otro-nombre">Nombre del material (otro)</label>
+              <input type="text" id="ing-otro-nombre" placeholder="Escriba el nombre del material nuevo" autocomplete="off">
+            </div>
+            <div class="form-group">
+              <label for="ing-cantidad">Cantidad</label>
+              <input type="number" id="ing-cantidad" min="0.01" step="any" required>
+            </div>
+            <div class="form-group">
+              <label for="ing-proveedor">Proveedor</label>
+              <input type="text" id="ing-proveedor" placeholder="Nombre del proveedor">
+            </div>
+            <div class="form-group" style="grid-column: 1 / -1;">
+              <label for="ing-obs">Observaciones</label>
+              <textarea id="ing-obs" placeholder="Notas opcionales"></textarea>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-green">Registrar ingreso</button>
+          </div>
+        </form>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">Historial de ingresos</div>
+        </div>
+        <div class="card-body">
+        <div class="table-wrap table-cards">
+          <table id="table-ingresos">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Código</th>
+                <th>Material</th>
+                <th>Cantidad</th>
+                <th>Proveedor</th>
+                <th>Observaciones</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p class="empty-msg" id="ingresos-empty" hidden>Sin ingresos registrados.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- PESTAÑA 3: ÓRDENES -->
+    <section id="tab-ordenes" class="tab-panel" role="tabpanel">
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">Nueva orden de servicio</div>
+          <div class="card-sub">Registre materiales consumidos en la instalación</div>
+        </div>
+        <div class="card-body">
+        <form id="form-orden">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="ord-numero">N° Orden</label>
+              <input type="text" id="ord-numero" required placeholder="Ej. OS-2024-001">
+            </div>
+            <div class="form-group">
+              <label for="ord-fecha">Fecha</label>
+              <input type="date" id="ord-fecha" required>
+            </div>
+            <div class="form-group">
+              <label for="ord-cliente">Cliente</label>
+              <input type="text" id="ord-cliente" required>
+            </div>
+            <div class="form-group">
+              <label for="ord-direccion">Dirección</label>
+              <input type="text" id="ord-direccion" required>
+            </div>
+          </div>
+          <p style="font-size:0.8125rem;font-weight:600;color:var(--text-muted);margin:1rem 0 0.75rem;">Materiales utilizados</p>
+          <div class="material-rows" id="orden-material-rows"></div>
+          <div class="form-actions">
+            <button type="button" class="btn btn-outline" id="btn-add-row">Agregar fila</button>
+            <button type="submit" class="btn btn-green">Guardar orden</button>
+          </div>
+        </form>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">Historial de órdenes</div>
+        </div>
+        <div class="card-body">
+        <div id="ordenes-list"></div>
+        <p class="empty-msg" id="ordenes-empty">Sin órdenes guardadas.</p>
+        </div>
+      </div>
+    </section>
+    </main>
+
+    <footer class="app-footer">Inventario Gas · Datos almacenados localmente en este dispositivo</footer>
+  </div>
+
+  <script>
+(function () {
+  'use strict';
+
+  const DB_KEY = btoa('gasInventoryDB_v1');
+
+  const INITIAL_PRODUCTS = [
+    { id: 'A01',   name: 'Abrazadera Plastica Blanca 1/2',              unit: 'Unidad', qty: 7   },
+    { id: 'A02',   name: 'Abrazadera Plastica Blanca 5/8',              unit: 'Unidad', qty: 15  },
+    { id: 'AH01',  name: 'Adaptador Hembra Pealpe 1216x1/2 (Racor)',   unit: 'Unidad', qty: 12  },
+    { id: 'AM01',  name: 'Adaptador Macho Pealpe 1216x1/2 (Racor)',    unit: 'Unidad', qty: 14  },
+    { id: 'C01',   name: 'Codo Galvanizado 3/8',                        unit: 'Unidad', qty: 27  },
+    { id: 'C02',   name: 'Codo Galvanizado 1/2',                        unit: 'Unidad', qty: 7   },
+    { id: 'C03',   name: 'Codo Calle Galvanizado 1/2',                  unit: 'Unidad', qty: 15  },
+    { id: 'CF01',  name: 'Conduflex 1/2',                               unit: 'm',      qty: 4   },
+    { id: 'CH01',  name: 'Chazo Puntilla 1/4 x 1-1/4',                 unit: 'Unidad', qty: 90  },
+    { id: 'CH02',  name: 'Chazo Puntilla 1/4 x 2-1/4',                 unit: 'Unidad', qty: 4   },
+    { id: 'CHE01', name: 'Cheque Hidro Veroni 1/2 en Bronce',          unit: 'Unidad', qty: 26  },
+    { id: 'COP03', name: 'Copa HG 1/2 x 3/8',                          unit: 'Unidad', qty: 5   },
+    { id: 'CT01',  name: 'Cinta Teflon 1/2',                            unit: 'Unidad', qty: 7   },
+    { id: 'EM01',  name: 'Empaques Medidor',                            unit: 'Unidad', qty: 4   },
+    { id: 'EM02',  name: 'Empaques Negros',                             unit: 'Unidad', qty: 5   },
+    { id: 'FU01',  name: 'Fundente',                                    unit: 'Unidad', qty: 0.4 },
+    { id: 'GB01',  name: 'Gas Butano 14 oz',                            unit: 'Unidad', qty: 1   },
+    { id: 'MA01',  name: 'Manguera Linea Azul 1mt (Gumi)',             unit: 'Unidad', qty: 8   },
+    { id: 'MA02',  name: 'Manguera Linea Azul 1.5mt (Gumi)',           unit: 'Unidad', qty: 8   },
+    { id: 'MA03',  name: 'Manguera Sedal 1MT (Flexometalico)',         unit: 'Unidad', qty: 5   },
+    { id: 'MA06',  name: 'Acople H2O Taumm HXH Grueso 40cm',          unit: 'Unidad', qty: 29  },
+    { id: 'MA07',  name: 'Acople Gas Sedal 40cm (Manguera)',           unit: 'Unidad', qty: 29  },
+    { id: 'MMH01', name: 'Acople H2O Taumm MxH Grueso 40cm',          unit: 'Unidad', qty: 27  },
+    { id: 'N01',   name: 'Niple Galvanizado 1/2 x 1-1/2',             unit: 'Unidad', qty: 25  },
+    { id: 'R01',   name: 'Racor 3/8 NPT Macho (Pitorra Plana)',        unit: 'Unidad', qty: 1   },
+    { id: 'R02',   name: 'Racor 3/8 Sedal (Pitorra Conica)',           unit: 'Unidad', qty: 11  },
+    { id: 'SE01',  name: 'Soldadura 95-5 Estano',                      unit: 'Unidad', qty: 0.2 },
+    { id: 'T01',   name: 'Tuberia Pealpe 1/2 Gas',                     unit: 'm',      qty: 4   },
+    { id: 'TA01',  name: 'Tapon Galvanizado Macho 1/2',                unit: 'Unidad', qty: 6   },
+    { id: 'TE02',  name: 'Tee Pealpe 1216 x 1/2',                     unit: 'Unidad', qty: 1   },
+    { id: 'U02',   name: 'Union Galvanizada 3/8',                      unit: 'Unidad', qty: 31  },
+    { id: 'U03',   name: 'Union Galvanizada 1/2',                      unit: 'Unidad', qty: 11  },
+    { id: 'U04',   name: 'Union Pealpe 1216 x 1216',                   unit: 'Unidad', qty: 1   },
+    { id: 'V02',   name: 'Valvula Pealpe x Pealpe 1/2',               unit: 'Unidad', qty: 1   },
+    { id: 'V03',   name: 'Valvula Pealpe 1216 x 1/2 H Mar Gas',       unit: 'Unidad', qty: 1   }
+  ];
+
+  /** @type {{ productos: object[], ingresos: object[], ordenes: object[] }} */
+  let db = { productos: [], ingresos: [], ordenes: [] };
+
+  function genId() {
+    return String(Date.now()) + '_' + Math.random().toString(36).slice(2, 9);
+  }
+
+  function loadDB() {
+    try {
+      const raw = localStorage.getItem(atob(DB_KEY));
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && Array.isArray(parsed.productos)) {
+          db = {
+            productos: parsed.productos,
+            ingresos: Array.isArray(parsed.ingresos) ? parsed.ingresos : [],
+            ordenes: Array.isArray(parsed.ordenes) ? parsed.ordenes : []
+          };
+          return;
+        }
+      }
+    } catch (e) { /* corrupt data — reset below */ }
+    db = {
+      productos: INITIAL_PRODUCTS.map(p => ({ ...p })),
+      ingresos: [],
+      ordenes: []
+    };
+    saveDB();
+  }
+
+  function saveDB() {
+    localStorage.setItem(atob(DB_KEY), JSON.stringify(db));
+  }
+
+  function getProduct(id) {
+    return db.productos.find(p => p.id === id);
+  }
+
+  function sumIngresos(productId) {
+    return db.ingresos
+      .filter(i => i.productId === productId)
+      .reduce((s, i) => s + Number(i.cantidad), 0);
+  }
+
+  function sumConsumos(productId) {
+    let total = 0;
+    for (const ord of db.ordenes) {
+      for (const m of ord.materiales || []) {
+        if (m.productId === productId) total += Number(m.cantidad);
+      }
+    }
+    return total;
+  }
+
+  function getStock(productId) {
+    const p = getProduct(productId);
+    if (!p) return 0;
+    return Number(p.qty) + sumIngresos(productId) - sumConsumos(productId);
+  }
+
+  function stockLevel(stock) {
+    if (stock >= 10) return 'green';
+    if (stock >= 3) return 'yellow';
+    return 'red';
+  }
+
+  function formatQty(n) {
+    const v = Number(n);
+    if (Number.isInteger(v) || Math.abs(v - Math.round(v)) < 1e-9) return String(Math.round(v * 1000) / 1000);
+    return parseFloat(v.toFixed(3)).toString();
+  }
+
+  function escapeHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  /* Toast */
+  function toast(message, type) {
+    type = type || 'info';
+    const container = document.getElementById('toast-container');
+    const el = document.createElement('div');
+    el.className = 'toast ' + type;
+    el.textContent = message;
+    container.appendChild(el);
+    setTimeout(function () {
+      el.classList.add('out');
+      setTimeout(function () { el.remove(); }, 300);
+    }, 3200);
+  }
+
+  const INGRESO_OTRO_VALUE = '__OTRO__';
+
+  /* Product options HTML */
+  function productOptions(selectedId) {
+    return db.productos
+      .map(function (p) {
+        const sel = p.id === selectedId ? ' selected' : '';
+        return '<option value="' + escapeHtml(p.id) + '"' + sel + '>' +
+          escapeHtml(p.id) + ' — ' + escapeHtml(p.name) + '</option>';
+      })
+      .join('');
+  }
+
+  function productOptionsIngreso(selectedId) {
+    const list = productOptions(selectedId);
+    const otroSel = selectedId === INGRESO_OTRO_VALUE ? ' selected' : '';
+    return list +
+      '<option value="' + INGRESO_OTRO_VALUE + '"' + otroSel + '>— Otro (escribir nombre) —</option>';
+  }
+
+  function fillIngresoMaterialSelect() {
+    const ingSel = document.getElementById('ing-material');
+    if (!ingSel) return;
+    const cur = ingSel.value;
+    ingSel.innerHTML =
+      '<option value="">— Seleccionar material —</option>' + productOptionsIngreso(cur);
+    toggleIngresoOtro();
+  }
+
+  function toggleIngresoOtro() {
+    const sel = document.getElementById('ing-material');
+    const wrap = document.getElementById('ing-otro-wrap');
+    const inp = document.getElementById('ing-otro-nombre');
+    if (!sel || !wrap || !inp) return;
+    const isOtro = sel.value === INGRESO_OTRO_VALUE;
+    wrap.classList.toggle('visible', isOtro);
+    inp.required = isOtro;
+    if (!isOtro) inp.value = '';
+  }
+
+  function nextOtroProductId() {
+    let max = 0;
+    db.productos.forEach(function (p) {
+      const m = /^OTR(\d+)$/i.exec(p.id);
+      if (m) max = Math.max(max, parseInt(m[1], 10));
+    });
+    return 'OTR' + String(max + 1).padStart(2, '0');
+  }
+
+  function findProductByName(name) {
+    const n = name.trim().toLowerCase();
+    return db.productos.find(function (p) {
+      return p.name.trim().toLowerCase() === n;
+    });
+  }
+
+  function resolveIngresoProductId() {
+    const selVal = document.getElementById('ing-material').value;
+    if (selVal === INGRESO_OTRO_VALUE) {
+      const nombre = document.getElementById('ing-otro-nombre').value.trim();
+      if (!nombre) return null;
+      const existing = findProductByName(nombre);
+      if (existing) return existing.id;
+      const nuevo = {
+        id: nextOtroProductId(),
+        name: nombre,
+        unit: 'Unidad',
+        qty: 0
+      };
+      db.productos.push(nuevo);
+      return nuevo.id;
+    }
+    return selVal || null;
+  }
+
+  function resetIngresoForm() {
+    document.getElementById('form-ingreso').reset();
+    setToday('ing-fecha');
+    document.getElementById('ing-otro-nombre').value = '';
+    fillIngresoMaterialSelect();
+  }
+
+  function fillMaterialSelects() {
+    document.querySelectorAll('.sel-material').forEach(function (sel) {
+      const cur = sel.value;
+      sel.innerHTML = '<option value="">— Seleccionar —</option>' + productOptions(cur);
+    });
+    fillIngresoMaterialSelect();
+  }
+
+  function updateStats() {
+    let ok = 0, warn = 0, danger = 0;
+    db.productos.forEach(function (p) {
+      const level = stockLevel(getStock(p.id));
+      if (level === 'green') ok++;
+      else if (level === 'yellow') warn++;
+      else danger++;
+    });
+    const elTotal = document.getElementById('stat-total');
+    const elOk = document.getElementById('stat-ok');
+    const elWarn = document.getElementById('stat-warn');
+    const elDanger = document.getElementById('stat-danger');
+    if (elTotal) elTotal.textContent = String(db.productos.length);
+    if (elOk) elOk.textContent = String(ok);
+    if (elWarn) elWarn.textContent = String(warn);
+    if (elDanger) elDanger.textContent = String(danger);
+  }
+
+  /* Render Saldos */
+  function renderSaldos(filter) {
+    filter = (filter || '').trim().toLowerCase();
+    const tbody = document.querySelector('#table-saldos tbody');
+    const rows = db.productos
+      .filter(function (p) {
+        if (!filter) return true;
+        return p.id.toLowerCase().includes(filter) ||
+          p.name.toLowerCase().includes(filter);
+      })
+      .map(function (p) {
+        const stock = getStock(p.id);
+        const level = stockLevel(stock);
+        return '<tr>' +
+          '<td class="code-cell" data-label="Código">' + escapeHtml(p.id) + '</td>' +
+          '<td data-label="Material">' + escapeHtml(p.name) + '</td>' +
+          '<td data-label="Unidad">' + escapeHtml(p.unit) + '</td>' +
+          '<td data-label="Stock actual"><span class="stock-pill stock-pill--' + level + '">' +
+          '<span class="stock-pill-dot"></span>' +
+          formatQty(stock) + '</span></td>' +
+          '</tr>';
+      });
+    tbody.innerHTML = rows.join('') ||
+      '<tr class="empty-row"><td colspan="4" data-label="">Sin resultados.</td></tr>';
+    updateStats();
+  }
+
+  /* Render Ingresos */
+  function renderIngresos() {
+    const tbody = document.querySelector('#table-ingresos tbody');
+    const empty = document.getElementById('ingresos-empty');
+    if (!db.ingresos.length) {
+      tbody.innerHTML = '';
+      empty.hidden = false;
+      return;
+    }
+    empty.hidden = true;
+    const sorted = db.ingresos.slice().sort(function (a, b) {
+      return (b.fecha || '').localeCompare(a.fecha || '');
+    });
+    tbody.innerHTML = sorted.map(function (ing) {
+      const p = getProduct(ing.productId);
+      return '<tr data-ing-id="' + escapeHtml(ing.id) + '">' +
+        '<td data-label="Fecha">' + escapeHtml(ing.fecha || '') + '</td>' +
+        '<td class="code-cell" data-label="Código">' + escapeHtml(ing.productId) + '</td>' +
+        '<td data-label="Material">' + escapeHtml(p ? p.name : '—') + '</td>' +
+        '<td data-label="Cantidad">' + formatQty(ing.cantidad) + '</td>' +
+        '<td data-label="Proveedor">' + escapeHtml(ing.proveedor || '—') + '</td>' +
+        '<td data-label="Observaciones">' + escapeHtml(ing.observaciones || '—') + '</td>' +
+        '<td class="td-actions" data-label="Acción"><button type="button" class="btn btn-red btn-sm btn-del-ingreso" data-id="' +
+        escapeHtml(ing.id) + '">Eliminar</button></td></tr>';
+    }).join('');
+  }
+
+  /* Orden material rows UI */
+  function createMaterialRow() {
+    const div = document.createElement('div');
+    div.className = 'material-row';
+    div.innerHTML =
+      '<div class="form-group"><label>Material</label>' +
+      '<select class="sel-material" required><option value="">— Seleccionar —</option>' +
+      productOptions('') + '</select></div>' +
+      '<div class="form-group"><label>Cantidad usada</label>' +
+      '<input type="number" class="inp-cantidad" min="0.01" step="any" required></div>' +
+      '<button type="button" class="btn btn-red btn-sm btn-quitar-fila">Quitar fila</button>';
+    div.querySelector('.btn-quitar-fila').addEventListener('click', function () {
+      const container = document.getElementById('orden-material-rows');
+      if (container.children.length > 1) div.remove();
+      else toast('Debe haber al menos una fila de material.', 'error');
+    });
+    return div;
+  }
+
+  function resetOrdenForm() {
+    document.getElementById('form-orden').reset();
+    setToday('ord-fecha');
+    const container = document.getElementById('orden-material-rows');
+    container.innerHTML = '';
+    container.appendChild(createMaterialRow());
+  }
+
+  /* Render Órdenes historial */
+  function renderOrdenes() {
+    const list = document.getElementById('ordenes-list');
+    const empty = document.getElementById('ordenes-empty');
+    if (!db.ordenes.length) {
+      list.innerHTML = '';
+      empty.hidden = false;
+      return;
+    }
+    empty.hidden = true;
+    const sorted = db.ordenes.slice().sort(function (a, b) {
+      return (b.fecha || '').localeCompare(a.fecha || '');
+    });
+    list.innerHTML = sorted.map(function (ord) {
+      const mats = (ord.materiales || []).map(function (m) {
+        const p = getProduct(m.productId);
+        return '<tr><td class="code-cell" data-label="Código">' + escapeHtml(m.productId) + '</td>' +
+          '<td data-label="Material">' + escapeHtml(p ? p.name : '—') + '</td>' +
+          '<td data-label="Cantidad">' + formatQty(m.cantidad) + '</td>' +
+          '<td data-label="Unidad">' + escapeHtml(p ? p.unit : '') + '</td></tr>';
+      }).join('');
+      return '<div class="order-card" data-ord-id="' + escapeHtml(ord.id) + '">' +
+        '<div class="order-header">' +
+        '<div class="order-meta">' +
+        '<span><strong>Orden:</strong> ' + escapeHtml(ord.numero) + '</span>' +
+        '<span><strong>Fecha:</strong> ' + escapeHtml(ord.fecha) + '</span>' +
+        '<span><strong>Cliente:</strong> ' + escapeHtml(ord.cliente) + '</span>' +
+        '<span><strong>Dir:</strong> ' + escapeHtml(ord.direccion) + '</span>' +
+        '</div>' +
+        '<div class="order-header-actions">' +
+        '<button type="button" class="btn btn-red btn-sm btn-del-orden" data-id="' +
+        escapeHtml(ord.id) + '">Eliminar</button>' +
+        '<span class="chevron" aria-hidden="true">▼</span></div></div>' +
+        '<div class="order-detail"><div class="table-wrap table-cards"><table>' +
+        '<thead><tr><th>Código</th><th>Material</th><th>Cantidad</th><th>Unidad</th></tr></thead>' +
+        '<tbody>' + (mats || '<tr><td colspan="4">Sin materiales</td></tr>') + '</tbody></table></div></div></div>';
+    }).join('');
+
+    list.querySelectorAll('.order-header').forEach(function (hdr) {
+      hdr.addEventListener('click', function (e) {
+        if (e.target.closest('.btn-del-orden')) return;
+        hdr.parentElement.classList.toggle('expanded');
+      });
+    });
+
+    list.querySelectorAll('.btn-del-orden').forEach(function (btn) {
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        deleteOrden(btn.getAttribute('data-id'));
+      });
+    });
+  }
+
+  function refreshAll() {
+    renderSaldos(document.getElementById('search-saldos').value);
+    renderIngresos();
+    renderOrdenes();
+    fillMaterialSelects();
+    updateStats();
+  }
+
+  function setToday(id) {
+    const el = document.getElementById(id);
+    if (el) el.value = new Date().toISOString().slice(0, 10);
+  }
+
+  /* Tabs */
+  document.querySelectorAll('.tab-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      const tab = btn.getAttribute('data-tab');
+      document.querySelectorAll('.tab-btn').forEach(function (b) {
+        b.classList.toggle('active', b === btn);
+        b.setAttribute('aria-selected', b === btn ? 'true' : 'false');
+      });
+      document.querySelectorAll('.tab-panel').forEach(function (panel) {
+        const active = panel.id === 'tab-' + tab;
+        panel.classList.toggle('active', active);
+        if (active) {
+          panel.style.animation = 'none';
+          void panel.offsetWidth;
+          panel.style.animation = '';
+        }
+      });
+    });
+  });
+
+  /* Search */
+  document.getElementById('search-saldos').addEventListener('input', function (e) {
+    renderSaldos(e.target.value);
+  });
+
+  /* Export */
+  document.getElementById('btn-export').addEventListener('click', function () {
+    const exportData = {
+      productos: db.productos,
+      ingresos: db.ingresos,
+      ordenes: db.ordenes,
+      exportado: new Date().toISOString(),
+      stocks: db.productos.map(function (p) {
+        return { id: p.id, stockActual: getStock(p.id) };
+      })
+    };
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'inventario_gas_' + new Date().toISOString().slice(0, 10) + '.json';
+    a.click();
+    URL.revokeObjectURL(a.href);
+    toast('Respaldo JSON descargado.', 'success');
+  });
+
+  document.getElementById('ing-material').addEventListener('change', toggleIngresoOtro);
+
+  /* Ingreso form */
+  document.getElementById('form-ingreso').addEventListener('submit', function (e) {
+    e.preventDefault();
+    const selVal = document.getElementById('ing-material').value;
+    if (!selVal) {
+      toast('Seleccione un material del listado.', 'error');
+      return;
+    }
+    if (selVal === INGRESO_OTRO_VALUE && !document.getElementById('ing-otro-nombre').value.trim()) {
+      toast('Escriba el nombre del material en "Otro".', 'error');
+      return;
+    }
+    const productId = resolveIngresoProductId();
+    const cantidad = parseFloat(document.getElementById('ing-cantidad').value);
+    if (!productId || !(cantidad > 0)) {
+      toast('Seleccione material y cantidad válida.', 'error');
+      return;
+    }
+    const esNuevo = selVal === INGRESO_OTRO_VALUE;
+    const ing = {
+      id: genId(),
+      fecha: document.getElementById('ing-fecha').value,
+      productId: productId,
+      cantidad: cantidad,
+      proveedor: document.getElementById('ing-proveedor').value.trim(),
+      observaciones: document.getElementById('ing-obs').value.trim()
+    };
+    db.ingresos.push(ing);
+    saveDB();
+    resetIngresoForm();
+    refreshAll();
+    toast(esNuevo ? 'Material nuevo registrado e ingreso guardado.' : 'Ingreso registrado correctamente.', 'success');
+  });
+
+  document.querySelector('#table-ingresos').addEventListener('click', function (e) {
+    const btn = e.target.closest('.btn-del-ingreso');
+    if (!btn) return;
+    const id = btn.getAttribute('data-id');
+    const idx = db.ingresos.findIndex(i => i.id === id);
+    if (idx === -1) return;
+    db.ingresos.splice(idx, 1);
+    saveDB();
+    refreshAll();
+    toast('Ingreso eliminado; stock revertido.', 'info');
+  });
+
+  function deleteOrden(id) {
+    const idx = db.ordenes.findIndex(o => o.id === id);
+    if (idx === -1) return;
+    db.ordenes.splice(idx, 1);
+    saveDB();
+    refreshAll();
+    toast('Orden eliminada; materiales devueltos al stock.', 'info');
+  }
+
+  /* Orden: add row */
+  document.getElementById('btn-add-row').addEventListener('click', function () {
+    document.getElementById('orden-material-rows').appendChild(createMaterialRow());
+  });
+
+  /* Orden: save */
+  document.getElementById('form-orden').addEventListener('submit', function (e) {
+    e.preventDefault();
+    const rows = document.querySelectorAll('#orden-material-rows .material-row');
+    const materiales = [];
+    const needed = {};
+
+    for (const row of rows) {
+      const productId = row.querySelector('.sel-material').value;
+      const cantidad = parseFloat(row.querySelector('.inp-cantidad').value);
+      if (!productId || !(cantidad > 0)) continue;
+      materiales.push({ productId: productId, cantidad: cantidad });
+      needed[productId] = (needed[productId] || 0) + cantidad;
+    }
+
+    if (!materiales.length) {
+      toast('Agregue al menos un material con cantidad válida.', 'error');
+      return;
+    }
+
+    for (const pid of Object.keys(needed)) {
+      const disponible = getStock(pid);
+      if (needed[pid] > disponible + 1e-9) {
+        const p = getProduct(pid);
+        toast('Stock insuficiente para ' + (p ? p.name : pid) +
+          '. Disponible: ' + formatQty(disponible) + ', solicitado: ' + formatQty(needed[pid]), 'error');
+        return;
+      }
+    }
+
+    const orden = {
+      id: genId(),
+      numero: document.getElementById('ord-numero').value.trim(),
+      fecha: document.getElementById('ord-fecha').value,
+      cliente: document.getElementById('ord-cliente').value.trim(),
+      direccion: document.getElementById('ord-direccion').value.trim(),
+      materiales: materiales
+    };
+
+    db.ordenes.push(orden);
+    saveDB();
+    resetOrdenForm();
+    refreshAll();
+    toast('Orden guardada; stock actualizado.', 'success');
+  });
+
+  /* Init */
+  loadDB();
+  setToday('ing-fecha');
+  setToday('ord-fecha');
+  fillIngresoMaterialSelect();
+  document.getElementById('orden-material-rows').appendChild(createMaterialRow());
+  refreshAll();
+
+})();
+  </script>
+</body>
+</html>
