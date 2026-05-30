@@ -612,6 +612,15 @@
 
     .ing-otro-wrap.visible { display: block; }
 
+    .field-hint {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.35rem;
+      line-height: 1.4;
+    }
+
+    #ing-codigo { font-family: var(--mono); text-transform: uppercase; }
+
     .app-footer {
       text-align: center;
       padding: 1rem;
@@ -850,9 +859,45 @@
       }
       .stat-card .stat-label { font-size: 0.625rem; }
     }
+
+    .app-loading {
+      position: fixed;
+      inset: 0;
+      z-index: 3000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      background: var(--bg);
+      color: var(--text-muted);
+      font-size: 0.9375rem;
+      font-weight: 500;
+    }
+
+    .app-loading.hidden { display: none; }
+
+    .app-loading-spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    body.app-ready .app-shell { visibility: visible; }
+    .app-shell { visibility: hidden; }
   </style>
 </head>
 <body>
+
+  <div id="app-loading" class="app-loading" aria-live="polite">
+    <div class="app-loading-spinner" aria-hidden="true"></div>
+    <span>Cargando catálogo…</span>
+  </div>
 
   <header class="header">
     <div class="header-inner">
@@ -932,7 +977,7 @@
       <div class="card">
         <div class="card-head">
           <div class="card-title">Registrar ingreso</div>
-          <div class="card-sub">Seleccione el material del catálogo o use la opción Otro</div>
+          <div class="card-sub">Ingrese el código, seleccione el material o use Otro para uno nuevo</div>
         </div>
         <div class="card-body">
         <form id="form-ingreso">
@@ -941,15 +986,21 @@
               <label for="ing-fecha">Fecha</label>
               <input type="date" id="ing-fecha" required>
             </div>
+            <div class="form-group">
+              <label for="ing-codigo">Código</label>
+              <input type="text" id="ing-codigo" placeholder="Ej. A01, C02, OTR03" autocomplete="off" list="ing-codigo-list">
+              <datalist id="ing-codigo-list"></datalist>
+            </div>
             <div class="form-group" style="grid-column: 1 / -1;">
               <label for="ing-material">Material</label>
-              <select id="ing-material" required>
+              <select id="ing-material">
                 <option value="">— Seleccionar material —</option>
               </select>
             </div>
             <div class="form-group ing-otro-wrap" id="ing-otro-wrap">
               <label for="ing-otro-nombre">Nombre del material (otro)</label>
-              <input type="text" id="ing-otro-nombre" placeholder="Escriba el nombre del material nuevo" autocomplete="off">
+              <input type="text" id="ing-otro-nombre" placeholder="Nombre del material nuevo" autocomplete="off">
+              <p class="field-hint">Si eligió Otro, puede definir el código arriba o se generará uno automático (OTR01…).</p>
             </div>
             <div class="form-group">
               <label for="ing-cantidad">Cantidad</label>
@@ -1051,78 +1102,82 @@
 (function () {
   'use strict';
 
-  const DB_KEY = btoa('gasInventoryDB_v1');
-
-  const INITIAL_PRODUCTS = [
-    { id: 'A01',   name: 'Abrazadera Plastica Blanca 1/2',              unit: 'Unidad', qty: 7   },
-    { id: 'A02',   name: 'Abrazadera Plastica Blanca 5/8',              unit: 'Unidad', qty: 15  },
-    { id: 'AH01',  name: 'Adaptador Hembra Pealpe 1216x1/2 (Racor)',   unit: 'Unidad', qty: 12  },
-    { id: 'AM01',  name: 'Adaptador Macho Pealpe 1216x1/2 (Racor)',    unit: 'Unidad', qty: 14  },
-    { id: 'C01',   name: 'Codo Galvanizado 3/8',                        unit: 'Unidad', qty: 27  },
-    { id: 'C02',   name: 'Codo Galvanizado 1/2',                        unit: 'Unidad', qty: 7   },
-    { id: 'C03',   name: 'Codo Calle Galvanizado 1/2',                  unit: 'Unidad', qty: 15  },
-    { id: 'CF01',  name: 'Conduflex 1/2',                               unit: 'm',      qty: 4   },
-    { id: 'CH01',  name: 'Chazo Puntilla 1/4 x 1-1/4',                 unit: 'Unidad', qty: 90  },
-    { id: 'CH02',  name: 'Chazo Puntilla 1/4 x 2-1/4',                 unit: 'Unidad', qty: 4   },
-    { id: 'CHE01', name: 'Cheque Hidro Veroni 1/2 en Bronce',          unit: 'Unidad', qty: 26  },
-    { id: 'COP03', name: 'Copa HG 1/2 x 3/8',                          unit: 'Unidad', qty: 5   },
-    { id: 'CT01',  name: 'Cinta Teflon 1/2',                            unit: 'Unidad', qty: 7   },
-    { id: 'EM01',  name: 'Empaques Medidor',                            unit: 'Unidad', qty: 4   },
-    { id: 'EM02',  name: 'Empaques Negros',                             unit: 'Unidad', qty: 5   },
-    { id: 'FU01',  name: 'Fundente',                                    unit: 'Unidad', qty: 0.4 },
-    { id: 'GB01',  name: 'Gas Butano 14 oz',                            unit: 'Unidad', qty: 1   },
-    { id: 'MA01',  name: 'Manguera Linea Azul 1mt (Gumi)',             unit: 'Unidad', qty: 8   },
-    { id: 'MA02',  name: 'Manguera Linea Azul 1.5mt (Gumi)',           unit: 'Unidad', qty: 8   },
-    { id: 'MA03',  name: 'Manguera Sedal 1MT (Flexometalico)',         unit: 'Unidad', qty: 5   },
-    { id: 'MA06',  name: 'Acople H2O Taumm HXH Grueso 40cm',          unit: 'Unidad', qty: 29  },
-    { id: 'MA07',  name: 'Acople Gas Sedal 40cm (Manguera)',           unit: 'Unidad', qty: 29  },
-    { id: 'MMH01', name: 'Acople H2O Taumm MxH Grueso 40cm',          unit: 'Unidad', qty: 27  },
-    { id: 'N01',   name: 'Niple Galvanizado 1/2 x 1-1/2',             unit: 'Unidad', qty: 25  },
-    { id: 'R01',   name: 'Racor 3/8 NPT Macho (Pitorra Plana)',        unit: 'Unidad', qty: 1   },
-    { id: 'R02',   name: 'Racor 3/8 Sedal (Pitorra Conica)',           unit: 'Unidad', qty: 11  },
-    { id: 'SE01',  name: 'Soldadura 95-5 Estano',                      unit: 'Unidad', qty: 0.2 },
-    { id: 'T01',   name: 'Tuberia Pealpe 1/2 Gas',                     unit: 'm',      qty: 4   },
-    { id: 'TA01',  name: 'Tapon Galvanizado Macho 1/2',                unit: 'Unidad', qty: 6   },
-    { id: 'TE02',  name: 'Tee Pealpe 1216 x 1/2',                     unit: 'Unidad', qty: 1   },
-    { id: 'U02',   name: 'Union Galvanizada 3/8',                      unit: 'Unidad', qty: 31  },
-    { id: 'U03',   name: 'Union Galvanizada 1/2',                      unit: 'Unidad', qty: 11  },
-    { id: 'U04',   name: 'Union Pealpe 1216 x 1216',                   unit: 'Unidad', qty: 1   },
-    { id: 'V02',   name: 'Valvula Pealpe x Pealpe 1/2',               unit: 'Unidad', qty: 1   },
-    { id: 'V03',   name: 'Valvula Pealpe 1216 x 1/2 H Mar Gas',       unit: 'Unidad', qty: 1   }
-  ];
+  const API = '/api';
+  const STOCK_EPS = 0.0001;
 
   /** @type {{ productos: object[], ingresos: object[], ordenes: object[] }} */
   let db = { productos: [], ingresos: [], ordenes: [] };
+  let catalogMeta = null;
 
   function genId() {
     return String(Date.now()) + '_' + Math.random().toString(36).slice(2, 9);
   }
 
-  function loadDB() {
-    try {
-      const raw = localStorage.getItem(atob(DB_KEY));
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (parsed && Array.isArray(parsed.productos)) {
-          db = {
-            productos: parsed.productos,
-            ingresos: Array.isArray(parsed.ingresos) ? parsed.ingresos : [],
-            ordenes: Array.isArray(parsed.ordenes) ? parsed.ordenes : []
-          };
-          return;
-        }
-      }
-    } catch (e) { /* corrupt data — reset below */ }
-    db = {
-      productos: INITIAL_PRODUCTS.map(p => ({ ...p })),
-      ingresos: [],
-      ordenes: []
+  function normalizeProduct(p) {
+    return {
+      id: String(p.id || '').trim(),
+      name: String(p.name || '').trim(),
+      unit: String(p.unit || 'Unidad').trim(),
+      qty: Number(p.qty) || 0
     };
-    saveDB();
   }
 
-  function saveDB() {
-    localStorage.setItem(atob(DB_KEY), JSON.stringify(db));
+  async function apiJson(method, path, body) {
+    const opts = { method: method, headers: { 'Content-Type': 'application/json' }, cache: 'no-store' };
+    if (body !== undefined) opts.body = JSON.stringify(body);
+    const res = await fetch(API + path, opts);
+    if (!res.ok) {
+      const err = await res.json().catch(function () { return {}; });
+      throw new Error(err.error || res.statusText);
+    }
+    return res.json();
+  }
+
+  async function loadDB() {
+    const prod = await apiJson('GET', '/productos');
+    const ing = await apiJson('GET', '/ingresos');
+    const ord = await apiJson('GET', '/ordenes');
+    catalogMeta = prod.meta || null;
+    db.productos = (prod.productos || []).map(normalizeProduct).filter(function (p) {
+      return p.id && p.name;
+    });
+    db.ingresos = ing.ingresos || [];
+    db.ordenes = ord.ordenes || [];
+  }
+
+  async function saveProductos() {
+    const data = await apiJson('PUT', '/productos', {
+      meta: catalogMeta || { actualizado: new Date().toISOString().slice(0, 10) },
+      productos: db.productos
+    });
+    catalogMeta = data.meta || catalogMeta;
+  }
+
+  async function saveIngresos() {
+    await apiJson('PUT', '/ingresos', { ingresos: db.ingresos });
+  }
+
+  async function saveOrdenes() {
+    await apiJson('PUT', '/ordenes', { ordenes: db.ordenes });
+  }
+
+  function hasStock(productId) {
+    return getStock(productId) > STOCK_EPS;
+  }
+
+  async function pruneZeroStockProducts() {
+    const removed = [];
+    const keep = [];
+    db.productos.forEach(function (p) {
+      if (hasStock(p.id)) keep.push(p);
+      else removed.push(p);
+    });
+    if (!removed.length) return;
+    db.productos = keep;
+    await saveProductos();
+    removed.forEach(function (p) {
+      toast('Material "' + p.name + '" (' + p.id + ') eliminado de productos.json — stock en 0.', 'info');
+    });
   }
 
   function getProduct(id) {
@@ -1185,8 +1240,20 @@
 
   const INGRESO_OTRO_VALUE = '__OTRO__';
 
-  /* Product options HTML */
+  /* Product options HTML (solo con stock disponible) */
   function productOptions(selectedId) {
+    return db.productos
+      .filter(function (p) { return hasStock(p.id); })
+      .map(function (p) {
+        const sel = p.id === selectedId ? ' selected' : '';
+        const stk = formatQty(getStock(p.id));
+        return '<option value="' + escapeHtml(p.id) + '"' + sel + '>' +
+          escapeHtml(p.id) + ' — ' + escapeHtml(p.name) + ' (disp. ' + stk + ')</option>';
+      })
+      .join('');
+  }
+
+  function productOptionsIngresoAll(selectedId) {
     return db.productos
       .map(function (p) {
         const sel = p.id === selectedId ? ' selected' : '';
@@ -1197,10 +1264,18 @@
   }
 
   function productOptionsIngreso(selectedId) {
-    const list = productOptions(selectedId);
+    const list = productOptionsIngresoAll(selectedId);
     const otroSel = selectedId === INGRESO_OTRO_VALUE ? ' selected' : '';
     return list +
       '<option value="' + INGRESO_OTRO_VALUE + '"' + otroSel + '>— Otro (escribir nombre) —</option>';
+  }
+
+  function fillIngresoCodigoDatalist() {
+    const list = document.getElementById('ing-codigo-list');
+    if (!list) return;
+    list.innerHTML = db.productos.map(function (p) {
+      return '<option value="' + escapeHtml(p.id) + '">' + escapeHtml(p.name) + '</option>';
+    }).join('');
   }
 
   function fillIngresoMaterialSelect() {
@@ -1209,7 +1284,38 @@
     const cur = ingSel.value;
     ingSel.innerHTML =
       '<option value="">— Seleccionar material —</option>' + productOptionsIngreso(cur);
+    fillIngresoCodigoDatalist();
     toggleIngresoOtro();
+  }
+
+  function findProductByCode(code) {
+    const c = String(code || '').trim();
+    if (!c) return null;
+    return db.productos.find(function (p) {
+      return p.id.toLowerCase() === c.toLowerCase();
+    }) || null;
+  }
+
+  function syncMaterialFromCodigo() {
+    const codigo = document.getElementById('ing-codigo').value.trim();
+    const sel = document.getElementById('ing-material');
+    if (!codigo || !sel) return;
+    const p = findProductByCode(codigo);
+    if (p) {
+      sel.value = p.id;
+      toggleIngresoOtro();
+    }
+  }
+
+  function syncCodigoFromMaterial() {
+    const sel = document.getElementById('ing-material');
+    const codigoInp = document.getElementById('ing-codigo');
+    if (!sel || !codigoInp) return;
+    if (sel.value && sel.value !== INGRESO_OTRO_VALUE) {
+      codigoInp.value = sel.value;
+    } else if (!sel.value) {
+      codigoInp.value = '';
+    }
   }
 
   function toggleIngresoOtro() {
@@ -1239,28 +1345,10 @@
     });
   }
 
-  function resolveIngresoProductId() {
-    const selVal = document.getElementById('ing-material').value;
-    if (selVal === INGRESO_OTRO_VALUE) {
-      const nombre = document.getElementById('ing-otro-nombre').value.trim();
-      if (!nombre) return null;
-      const existing = findProductByName(nombre);
-      if (existing) return existing.id;
-      const nuevo = {
-        id: nextOtroProductId(),
-        name: nombre,
-        unit: 'Unidad',
-        qty: 0
-      };
-      db.productos.push(nuevo);
-      return nuevo.id;
-    }
-    return selVal || null;
-  }
-
   function resetIngresoForm() {
     document.getElementById('form-ingreso').reset();
     setToday('ing-fecha');
+    document.getElementById('ing-codigo').value = '';
     document.getElementById('ing-otro-nombre').value = '';
     fillIngresoMaterialSelect();
   }
@@ -1273,9 +1361,13 @@
     fillIngresoMaterialSelect();
   }
 
+  function getActiveProducts() {
+    return db.productos.filter(function (p) { return hasStock(p.id); });
+  }
+
   function updateStats() {
     let ok = 0, warn = 0, danger = 0;
-    db.productos.forEach(function (p) {
+    getActiveProducts().forEach(function (p) {
       const level = stockLevel(getStock(p.id));
       if (level === 'green') ok++;
       else if (level === 'yellow') warn++;
@@ -1285,7 +1377,7 @@
     const elOk = document.getElementById('stat-ok');
     const elWarn = document.getElementById('stat-warn');
     const elDanger = document.getElementById('stat-danger');
-    if (elTotal) elTotal.textContent = String(db.productos.length);
+    if (elTotal) elTotal.textContent = String(getActiveProducts().length);
     if (elOk) elOk.textContent = String(ok);
     if (elWarn) elWarn.textContent = String(warn);
     if (elDanger) elDanger.textContent = String(danger);
@@ -1295,7 +1387,7 @@
   function renderSaldos(filter) {
     filter = (filter || '').trim().toLowerCase();
     const tbody = document.querySelector('#table-saldos tbody');
-    const rows = db.productos
+    const rows = getActiveProducts()
       .filter(function (p) {
         if (!filter) return true;
         return p.id.toLowerCase().includes(filter) ||
@@ -1314,7 +1406,7 @@
           '</tr>';
       });
     tbody.innerHTML = rows.join('') ||
-      '<tr class="empty-row"><td colspan="4" data-label="">Sin resultados.</td></tr>';
+      '<tr class="empty-row"><td colspan="4" data-label="">Sin materiales con stock (o sin coincidencias).</td></tr>';
     updateStats();
   }
 
@@ -1425,12 +1517,17 @@
     });
   }
 
-  function refreshAll() {
+  async function refreshAll() {
     renderSaldos(document.getElementById('search-saldos').value);
     renderIngresos();
     renderOrdenes();
     fillMaterialSelects();
     updateStats();
+  }
+
+  async function persistAndRefresh() {
+    await pruneZeroStockProducts();
+    refreshAll();
   }
 
   function setToday(id) {
@@ -1463,81 +1560,141 @@
     renderSaldos(e.target.value);
   });
 
-  /* Export */
-  document.getElementById('btn-export').addEventListener('click', function () {
-    const exportData = {
-      productos: db.productos,
-      ingresos: db.ingresos,
-      ordenes: db.ordenes,
-      exportado: new Date().toISOString(),
-      stocks: db.productos.map(function (p) {
-        return { id: p.id, stockActual: getStock(p.id) };
-      })
-    };
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+  function downloadJson(filename, data) {
+    const blob = new Blob([JSON.stringify(data, null, 2) + '\n'], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = 'inventario_gas_' + new Date().toISOString().slice(0, 10) + '.json';
+    a.download = filename;
     a.click();
     URL.revokeObjectURL(a.href);
-    toast('Respaldo JSON descargado.', 'success');
+  }
+
+  /* Export — copia de respaldo de los 3 JSON */
+  document.getElementById('btn-export').addEventListener('click', function () {
+    downloadJson('productos.json', {
+      meta: catalogMeta || { actualizado: new Date().toISOString().slice(0, 10) },
+      productos: db.productos
+    });
+    setTimeout(function () {
+      downloadJson('ingresos.json', { ingresos: db.ingresos });
+    }, 200);
+    setTimeout(function () {
+      downloadJson('ordenes.json', { ordenes: db.ordenes });
+    }, 400);
+    toast('Copia de respaldo descargada. Los datos ya están guardados en los JSON del servidor.', 'success');
   });
 
-  document.getElementById('ing-material').addEventListener('change', toggleIngresoOtro);
+  document.getElementById('ing-material').addEventListener('change', function () {
+    syncCodigoFromMaterial();
+    toggleIngresoOtro();
+  });
+
+  document.getElementById('ing-codigo').addEventListener('input', syncMaterialFromCodigo);
+  document.getElementById('ing-codigo').addEventListener('blur', syncMaterialFromCodigo);
+
+  async function resolveIngresoProductId() {
+    const codigo = document.getElementById('ing-codigo').value.trim();
+    const selVal = document.getElementById('ing-material').value;
+
+    if (codigo) {
+      const porCodigo = findProductByCode(codigo);
+      if (porCodigo) return porCodigo.id;
+    }
+
+    if (selVal === INGRESO_OTRO_VALUE) {
+      const nombre = document.getElementById('ing-otro-nombre').value.trim();
+      if (!nombre) return null;
+      if (codigo) {
+        const dup = findProductByCode(codigo);
+        if (dup) return dup.id;
+        const nuevo = { id: codigo.toUpperCase(), name: nombre, unit: 'Unidad', qty: 0 };
+        db.productos.push(nuevo);
+        await saveProductos();
+        return nuevo.id;
+      }
+      const existing = findProductByName(nombre);
+      if (existing) return existing.id;
+      const nuevo = { id: nextOtroProductId(), name: nombre, unit: 'Unidad', qty: 0 };
+      db.productos.push(nuevo);
+      await saveProductos();
+      return nuevo.id;
+    }
+
+    if (selVal) return selVal;
+
+    if (codigo) {
+      toast('No existe un material con el código "' + codigo + '".', 'error');
+    }
+    return null;
+  }
 
   /* Ingreso form */
-  document.getElementById('form-ingreso').addEventListener('submit', function (e) {
+  document.getElementById('form-ingreso').addEventListener('submit', async function (e) {
     e.preventDefault();
     const selVal = document.getElementById('ing-material').value;
-    if (!selVal) {
-      toast('Seleccione un material del listado.', 'error');
+    const codigo = document.getElementById('ing-codigo').value.trim();
+
+    if (!codigo && !selVal) {
+      toast('Ingrese el código o seleccione un material.', 'error');
       return;
     }
     if (selVal === INGRESO_OTRO_VALUE && !document.getElementById('ing-otro-nombre').value.trim()) {
       toast('Escriba el nombre del material en "Otro".', 'error');
       return;
     }
-    const productId = resolveIngresoProductId();
-    const cantidad = parseFloat(document.getElementById('ing-cantidad').value);
-    if (!productId || !(cantidad > 0)) {
-      toast('Seleccione material y cantidad válida.', 'error');
-      return;
+    try {
+      const productId = await resolveIngresoProductId();
+      const cantidad = parseFloat(document.getElementById('ing-cantidad').value);
+      if (!productId || !(cantidad > 0)) {
+        toast('Seleccione material y cantidad válida.', 'error');
+        return;
+      }
+      const esNuevo = selVal === INGRESO_OTRO_VALUE;
+      const ing = {
+        id: genId(),
+        fecha: document.getElementById('ing-fecha').value,
+        productId: productId,
+        cantidad: cantidad,
+        proveedor: document.getElementById('ing-proveedor').value.trim(),
+        observaciones: document.getElementById('ing-obs').value.trim()
+      };
+      db.ingresos.push(ing);
+      await saveIngresos();
+      resetIngresoForm();
+      await persistAndRefresh();
+      toast(esNuevo ? 'Guardado en productos.json e ingresos.json.' : 'Guardado en ingresos.json.', 'success');
+    } catch (err) {
+      toast('Error al guardar. Ejecute: npm start', 'error');
     }
-    const esNuevo = selVal === INGRESO_OTRO_VALUE;
-    const ing = {
-      id: genId(),
-      fecha: document.getElementById('ing-fecha').value,
-      productId: productId,
-      cantidad: cantidad,
-      proveedor: document.getElementById('ing-proveedor').value.trim(),
-      observaciones: document.getElementById('ing-obs').value.trim()
-    };
-    db.ingresos.push(ing);
-    saveDB();
-    resetIngresoForm();
-    refreshAll();
-    toast(esNuevo ? 'Material nuevo registrado e ingreso guardado.' : 'Ingreso registrado correctamente.', 'success');
   });
 
-  document.querySelector('#table-ingresos').addEventListener('click', function (e) {
+  document.querySelector('#table-ingresos').addEventListener('click', async function (e) {
     const btn = e.target.closest('.btn-del-ingreso');
     if (!btn) return;
     const id = btn.getAttribute('data-id');
     const idx = db.ingresos.findIndex(i => i.id === id);
     if (idx === -1) return;
-    db.ingresos.splice(idx, 1);
-    saveDB();
-    refreshAll();
-    toast('Ingreso eliminado; stock revertido.', 'info');
+    try {
+      db.ingresos.splice(idx, 1);
+      await saveIngresos();
+      await persistAndRefresh();
+      toast('Ingreso eliminado de ingresos.json.', 'info');
+    } catch (err) {
+      toast('Error al eliminar ingreso.', 'error');
+    }
   });
 
-  function deleteOrden(id) {
+  async function deleteOrden(id) {
     const idx = db.ordenes.findIndex(o => o.id === id);
     if (idx === -1) return;
-    db.ordenes.splice(idx, 1);
-    saveDB();
-    refreshAll();
-    toast('Orden eliminada; materiales devueltos al stock.', 'info');
+    try {
+      db.ordenes.splice(idx, 1);
+      await saveOrdenes();
+      await persistAndRefresh();
+      toast('Orden eliminada de ordenes.json.', 'info');
+    } catch (err) {
+      toast('Error al eliminar orden.', 'error');
+    }
   }
 
   /* Orden: add row */
@@ -1546,7 +1703,7 @@
   });
 
   /* Orden: save */
-  document.getElementById('form-orden').addEventListener('submit', function (e) {
+  document.getElementById('form-orden').addEventListener('submit', async function (e) {
     e.preventDefault();
     const rows = document.querySelectorAll('#orden-material-rows .material-row');
     const materiales = [];
@@ -1584,20 +1741,47 @@
       materiales: materiales
     };
 
-    db.ordenes.push(orden);
-    saveDB();
-    resetOrdenForm();
-    refreshAll();
-    toast('Orden guardada; stock actualizado.', 'success');
+    try {
+      db.ordenes.push(orden);
+      await saveOrdenes();
+      resetOrdenForm();
+      await persistAndRefresh();
+      const sinStock = orden.materiales.filter(function (m) {
+        return !hasStock(m.productId);
+      }).length;
+      if (sinStock) {
+        toast('Orden en ordenes.json. ' + sinStock + ' material(es) en 0 eliminados de productos.json.', 'success');
+      } else {
+        toast('Orden guardada en ordenes.json.', 'success');
+      }
+    } catch (err) {
+      toast('Error al guardar orden. Ejecute: npm start', 'error');
+    }
   });
 
-  /* Init */
-  loadDB();
-  setToday('ing-fecha');
-  setToday('ord-fecha');
-  fillIngresoMaterialSelect();
-  document.getElementById('orden-material-rows').appendChild(createMaterialRow());
-  refreshAll();
+  function hideAppLoading() {
+    const el = document.getElementById('app-loading');
+    if (el) el.classList.add('hidden');
+    document.body.classList.add('app-ready');
+  }
+
+  async function initApp() {
+    try {
+      await loadDB();
+      setToday('ing-fecha');
+      setToday('ord-fecha');
+      fillIngresoMaterialSelect();
+      document.getElementById('orden-material-rows').appendChild(createMaterialRow());
+      refreshAll();
+    } catch (e) {
+      console.error(e);
+      toast('No se pudo leer los JSON. Ejecute en la carpeta del proyecto: npm start', 'error');
+    } finally {
+      hideAppLoading();
+    }
+  }
+
+  initApp();
 
 })();
   </script>

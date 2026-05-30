@@ -1,0 +1,219 @@
+{
+  "meta": {
+    "nombre": "Catálogo inicial — Inventario Gas",
+    "version": 1,
+    "actualizado": "2026-05-30"
+  },
+  "productos": [
+    {
+      "id": "A01",
+      "name": "Abrazadera Plastica Blanca 1/2",
+      "unit": "Unidad",
+      "qty": 7
+    },
+    {
+      "id": "A02",
+      "name": "Abrazadera Plastica Blanca 5/8",
+      "unit": "Unidad",
+      "qty": 15
+    },
+    {
+      "id": "AH01",
+      "name": "Adaptador Hembra Pealpe 1216x1/2 (Racor)",
+      "unit": "Unidad",
+      "qty": 12
+    },
+    {
+      "id": "AM01",
+      "name": "Adaptador Macho Pealpe 1216x1/2 (Racor)",
+      "unit": "Unidad",
+      "qty": 14
+    },
+    {
+      "id": "C01",
+      "name": "Codo Galvanizado 3/8",
+      "unit": "Unidad",
+      "qty": 27
+    },
+    {
+      "id": "C02",
+      "name": "Codo Galvanizado 1/2",
+      "unit": "Unidad",
+      "qty": 7
+    },
+    {
+      "id": "C03",
+      "name": "Codo Calle Galvanizado 1/2",
+      "unit": "Unidad",
+      "qty": 15
+    },
+    {
+      "id": "CF01",
+      "name": "Conduflex 1/2",
+      "unit": "m",
+      "qty": 4
+    },
+    {
+      "id": "CH01",
+      "name": "Chazo Puntilla 1/4 x 1-1/4",
+      "unit": "Unidad",
+      "qty": 90
+    },
+    {
+      "id": "CH02",
+      "name": "Chazo Puntilla 1/4 x 2-1/4",
+      "unit": "Unidad",
+      "qty": 4
+    },
+    {
+      "id": "CHE01",
+      "name": "Cheque Hidro Veroni 1/2 en Bronce",
+      "unit": "Unidad",
+      "qty": 26
+    },
+    {
+      "id": "COP03",
+      "name": "Copa HG 1/2 x 3/8",
+      "unit": "Unidad",
+      "qty": 5
+    },
+    {
+      "id": "CT01",
+      "name": "Cinta Teflon 1/2",
+      "unit": "Unidad",
+      "qty": 7
+    },
+    {
+      "id": "EM01",
+      "name": "Empaques Medidor",
+      "unit": "Unidad",
+      "qty": 4
+    },
+    {
+      "id": "EM02",
+      "name": "Empaques Negros",
+      "unit": "Unidad",
+      "qty": 5
+    },
+    {
+      "id": "FU01",
+      "name": "Fundente",
+      "unit": "Unidad",
+      "qty": 0.4
+    },
+    {
+      "id": "GB01",
+      "name": "Gas Butano 14 oz",
+      "unit": "Unidad",
+      "qty": 1
+    },
+    {
+      "id": "MA01",
+      "name": "Manguera Linea Azul 1mt (Gumi)",
+      "unit": "Unidad",
+      "qty": 8
+    },
+    {
+      "id": "MA02",
+      "name": "Manguera Linea Azul 1.5mt (Gumi)",
+      "unit": "Unidad",
+      "qty": 8
+    },
+    {
+      "id": "MA03",
+      "name": "Manguera Sedal 1MT (Flexometalico)",
+      "unit": "Unidad",
+      "qty": 5
+    },
+    {
+      "id": "MA06",
+      "name": "Acople H2O Taumm HXH Grueso 40cm",
+      "unit": "Unidad",
+      "qty": 29
+    },
+    {
+      "id": "MA07",
+      "name": "Acople Gas Sedal 40cm (Manguera)",
+      "unit": "Unidad",
+      "qty": 29
+    },
+    {
+      "id": "MMH01",
+      "name": "Acople H2O Taumm MxH Grueso 40cm",
+      "unit": "Unidad",
+      "qty": 27
+    },
+    {
+      "id": "N01",
+      "name": "Niple Galvanizado 1/2 x 1-1/2",
+      "unit": "Unidad",
+      "qty": 25
+    },
+    {
+      "id": "R01",
+      "name": "Racor 3/8 NPT Macho (Pitorra Plana)",
+      "unit": "Unidad",
+      "qty": 1
+    },
+    {
+      "id": "R02",
+      "name": "Racor 3/8 Sedal (Pitorra Conica)",
+      "unit": "Unidad",
+      "qty": 11
+    },
+    {
+      "id": "SE01",
+      "name": "Soldadura 95-5 Estano",
+      "unit": "Unidad",
+      "qty": 0.2
+    },
+    {
+      "id": "T01",
+      "name": "Tuberia Pealpe 1/2 Gas",
+      "unit": "m",
+      "qty": 4
+    },
+    {
+      "id": "TA01",
+      "name": "Tapon Galvanizado Macho 1/2",
+      "unit": "Unidad",
+      "qty": 6
+    },
+    {
+      "id": "TE02",
+      "name": "Tee Pealpe 1216 x 1/2",
+      "unit": "Unidad",
+      "qty": 1
+    },
+    {
+      "id": "U02",
+      "name": "Union Galvanizada 3/8",
+      "unit": "Unidad",
+      "qty": 31
+    },
+    {
+      "id": "U03",
+      "name": "Union Galvanizada 1/2",
+      "unit": "Unidad",
+      "qty": 11
+    },
+    {
+      "id": "U04",
+      "name": "Union Pealpe 1216 x 1216",
+      "unit": "Unidad",
+      "qty": 1
+    },
+    {
+      "id": "V02",
+      "name": "Valvula Pealpe x Pealpe 1/2",
+      "unit": "Unidad",
+      "qty": 1
+    },
+    {
+      "id": "V03",
+      "name": "Valvula Pealpe 1216 x 1/2 H Mar Gas",
+      "unit": "Unidad",
+      "qty": 1
+    }
+  ]
+}
